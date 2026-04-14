@@ -10,22 +10,31 @@ param resourcePrefix string
 @description('Key Vault name for storing secrets')
 param keyVaultName string
 
-@description('SQL Server administrator login')
-param sqlAdminLogin string = 'contosoadmin'
+@description('Microsoft Entra object ID for the SQL administrator')
+param sqlAdminEntraObjectId string
 
-@description('SQL Server administrator password — must be provided via pipeline secret')
-@secure()
-param sqlAdminPassword string
+@description('Microsoft Entra login name for the SQL administrator')
+param sqlAdminEntraLogin string
 
-var sqlServerName = '${resourcePrefix}-sql'
+@description('Microsoft Entra principal type for the SQL administrator')
+@allowed(['User', 'Group', 'Application'])
+param sqlAdminEntraPrincipalType string = 'User'
+
+var sqlServerName = '${resourcePrefix}sql'
 var sqlDatabaseName = 'loan_db'
 
-resource sqlServer 'Microsoft.Sql/servers@2023-05-01-preview' = {
+resource sqlServer 'Microsoft.Sql/servers@2024-11-01-preview' = {
   name: sqlServerName
   location: location
   properties: {
-    administratorLogin: sqlAdminLogin
-    administratorLoginPassword: sqlAdminPassword
+    administrators: {
+      administratorType: 'ActiveDirectory'
+      azureADOnlyAuthentication: true
+      login: sqlAdminEntraLogin
+      principalType: sqlAdminEntraPrincipalType
+      sid: sqlAdminEntraObjectId
+      tenantId: subscription().tenantId
+    }
     version: '12.0'
     minimalTlsVersion: '1.2'
     publicNetworkAccess: environmentName == 'dev' ? 'Enabled' : 'Disabled'
@@ -72,7 +81,7 @@ resource sqlConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01
   parent: keyVault
   name: 'SqlConnectionString'
   properties: {
-    value: 'Server=tcp:${sqlServer.properties.fullyQualifiedDomainName},1433;Initial Catalog=${sqlDatabaseName};User ID=${sqlAdminLogin};Password=${sqlAdminPassword};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+    value: 'Server=tcp:${sqlServer.properties.fullyQualifiedDomainName},1433;Initial Catalog=${sqlDatabaseName};Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
   }
 }
 

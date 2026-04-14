@@ -28,7 +28,11 @@ jobs:
         with:
           resourceGroupName: ${{ secrets.AZURE_RG }}
           template: infra/bicep/main.bicep
-          parameters: infra/parameters/${{ github.event.inputs.environment }}.parameters.json
+          parameters: >-
+            infra/parameters/${{ github.event.inputs.environment }}.parameters.json
+            adminObjectId=${{ secrets.AZURE_SQL_ADMIN_OBJECT_ID }}
+            adminPrincipalName=${{ secrets.AZURE_SQL_ADMIN_LOGIN }}
+            adminPrincipalType=${{ secrets.AZURE_SQL_ADMIN_PRINCIPAL_TYPE }}
 
   deploy-sql-schema:
     name: Deploy SQL Schema & Seed Data
@@ -36,13 +40,28 @@ jobs:
     needs: deploy-infra
     steps:
       - uses: actions/checkout@v4
-      - name: Run SQL schema scripts
-        uses: azure/sql-action@v2
+      - name: Azure Login
+        uses: azure/login@v2
         with:
-          connection-string: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
-          path: src/sqlserver/schema/01_create_tables.sql
-      - name: Seed reference data
-        uses: azure/sql-action@v2
-        with:
-          connection-string: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
-          path: src/sqlserver/seed/05_seed_branch_reference.sql
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Install SqlServer PowerShell module
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module SQLServer -Scope CurrentUser -Force -AllowClobber
+      - name: Resolve deployed SQL server name
+        id: sqlserver
+        shell: bash
+        run: |
+          SQL_SERVER_FQDN=$(az deployment group show \
+            --resource-group "${{ secrets.AZURE_RG }}" \
+            --name main \
+            --query properties.outputs.sqlServerFqdn.value -o tsv)
+          echo "sql_server_fqdn=$SQL_SERVER_FQDN" >> "$GITHUB_OUTPUT"
+      - name: Run SQL schema scripts with Entra token
+        shell: pwsh
+        run: |
+          ./src/sqlserver/scripts/apply_sql_files.ps1 `
+            -ServerInstance "${{ steps.sqlserver.outputs.sql_server_fqdn }}" `
+            -Database loan_db `
+            -SqlFiles 'src/sqlserver/schema/01_create_tables.sql','src/sqlserver/seed/05_seed_branch_reference.sql'

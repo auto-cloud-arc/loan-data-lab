@@ -10,11 +10,19 @@ param location string = resourceGroup().location
 @description('Contoso project name prefix')
 param projectName string = 'contoso-loan'
 
-@description('SQL Server administrator password — provide via pipeline secret')
-@secure()
-param sqlAdminPassword string
+@description('Microsoft Entra object ID for the deployment administrator')
+param adminObjectId string
 
-var resourcePrefix = '${projectName}-${environmentName}'
+@description('Microsoft Entra user or service principal name for SQL administrator')
+param adminPrincipalName string
+
+@description('Microsoft Entra principal type for the deployment administrator')
+@allowed(['User', 'Group', 'Application'])
+param adminPrincipalType string = 'User'
+
+var projectToken = toLower(replace(projectName, '-', ''))
+var resourceToken = uniqueString(subscription().id, resourceGroup().id, location, environmentName)
+var resourcePrefix = 'az${substring(projectToken, 0, min(length(projectToken), 3))}${resourceToken}'
 
 module keyVault 'keyvault.bicep' = {
   name: 'keyVaultDeploy'
@@ -22,6 +30,8 @@ module keyVault 'keyvault.bicep' = {
     environmentName: environmentName
     location: location
     resourcePrefix: resourcePrefix
+    adminObjectId: adminObjectId
+    adminPrincipalType: adminPrincipalType
   }
 }
 
@@ -32,7 +42,9 @@ module sqlServer 'sql.bicep' = {
     location: location
     resourcePrefix: resourcePrefix
     keyVaultName: keyVault.outputs.keyVaultName
-    sqlAdminPassword: sqlAdminPassword
+    sqlAdminEntraObjectId: adminObjectId
+    sqlAdminEntraLogin: adminPrincipalName
+    sqlAdminEntraPrincipalType: adminPrincipalType
   }
 }
 

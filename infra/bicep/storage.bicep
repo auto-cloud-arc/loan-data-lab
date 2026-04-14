@@ -7,7 +7,7 @@ param location string
 @description('Resource prefix for naming')
 param resourcePrefix string
 
-var storageAccountName = replace('${resourcePrefix}sa', '-', '')
+var storageAccountName = '${resourcePrefix}sa000'
 var rawExtractContainerName = 'loan-raw-extracts'
 var cleanedContainerName = 'loan-cleaned'
 

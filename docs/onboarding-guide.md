@@ -161,14 +161,23 @@ run(session)
 To run the SQL scripts against a local or cloud Azure SQL instance:
 
 ```bash
-# Using sqlcmd (install from Microsoft)
-sqlcmd -S your-server.database.windows.net -d loan_db -U your-user \
+# Using sqlcmd with Microsoft Entra authentication
+sqlcmd -S your-server.database.windows.net -d loan_db -G \
   -i src/sqlserver/schema/01_create_tables.sql
-sqlcmd -S your-server.database.windows.net -d loan_db -U your-user \
+sqlcmd -S your-server.database.windows.net -d loan_db -G \
   -i src/sqlserver/seed/02_seed_loan_application_raw.sql
 ```
 
-Or use Azure Data Studio / SSMS and run the scripts manually.
+Or use the PowerShell helper after `az login`:
+
+```powershell
+pwsh ./src/sqlserver/scripts/apply_sql_files.ps1 `
+  -ServerInstance your-server.database.windows.net `
+  -Database loan_db `
+  -SqlFiles 'src/sqlserver/schema/01_create_tables.sql','src/sqlserver/seed/05_seed_branch_reference.sql'
+```
+
+Or use Azure Data Studio / SSMS and sign in with Microsoft Entra authentication.
 
 ---
 
@@ -178,11 +187,12 @@ Infrastructure is managed with Azure Bicep.
 
 ```bash
 az login
-az group create --name rg-contoso-loan-dev --location eastus
+az group create --name rg-contoso-loan-dev --location centralus
 az deployment group create \
   --resource-group rg-contoso-loan-dev \
   --template-file infra/bicep/main.bicep \
-  --parameters infra/parameters/dev.parameters.json
+  --parameters infra/parameters/dev.parameters.json \
+  --parameters adminObjectId=<entra-object-id> adminPrincipalName=<entra-login>
 ```
 
 Or trigger the GitHub Actions workflow manually:
@@ -204,7 +214,9 @@ Or trigger the GitHub Actions workflow manually:
 |--------|---------|
 | `AZURE_CREDENTIALS` | `deploy-azure-sql-and-config.yml` |
 | `AZURE_RG` | `deploy-azure-sql-and-config.yml` |
-| `AZURE_SQL_CONNECTION_STRING` | `deploy-azure-sql-and-config.yml` |
+| `AZURE_SQL_ADMIN_OBJECT_ID` | `deploy-azure-sql-and-config.yml` |
+| `AZURE_SQL_ADMIN_LOGIN` | `deploy-azure-sql-and-config.yml` |
+| `AZURE_SQL_ADMIN_PRINCIPAL_TYPE` | `deploy-azure-sql-and-config.yml` |
 
 ---
 
