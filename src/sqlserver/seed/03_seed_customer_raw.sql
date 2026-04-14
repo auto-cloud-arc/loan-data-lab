@@ -6,10 +6,8 @@
 USE loan_db;
 GO
 
-INSERT INTO dbo.customer_raw
-    (customer_id, first_name, last_name, date_of_birth, ssn_hash, email_hash,
-     phone_number, address_line1, city, state_code, zip_code, credit_score, load_timestamp)
-VALUES
+MERGE dbo.customer_raw AS target
+USING (VALUES
 -- CUST-001 appears twice — duplicate customer scenario for workshop
 ('CUST-001', 'John',  'Doe',    '1980-05-15',
  'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
@@ -63,5 +61,33 @@ VALUES
  'd9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0',
  'e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1',
  '5558881234', '999 Navy Pier', 'Annapolis',  'MD', '21401', 760,
- '2024-01-01T00:00:00Z');
+ '2024-01-01T00:00:00Z')
+) AS source (
+    customer_id, first_name, last_name, date_of_birth, ssn_hash, email_hash,
+    phone_number, address_line1, city, state_code, zip_code, credit_score, load_timestamp
+)
+ON target.customer_id = source.customer_id
+   AND target.load_timestamp = source.load_timestamp
+WHEN MATCHED THEN
+    UPDATE SET
+        first_name = source.first_name,
+        last_name = source.last_name,
+        date_of_birth = source.date_of_birth,
+        ssn_hash = source.ssn_hash,
+        email_hash = source.email_hash,
+        phone_number = source.phone_number,
+        address_line1 = source.address_line1,
+        city = source.city,
+        state_code = source.state_code,
+        zip_code = source.zip_code,
+        credit_score = source.credit_score
+WHEN NOT MATCHED THEN
+    INSERT (
+        customer_id, first_name, last_name, date_of_birth, ssn_hash, email_hash,
+        phone_number, address_line1, city, state_code, zip_code, credit_score, load_timestamp
+    )
+    VALUES (
+        source.customer_id, source.first_name, source.last_name, source.date_of_birth, source.ssn_hash, source.email_hash,
+        source.phone_number, source.address_line1, source.city, source.state_code, source.zip_code, source.credit_score, source.load_timestamp
+    );
 GO

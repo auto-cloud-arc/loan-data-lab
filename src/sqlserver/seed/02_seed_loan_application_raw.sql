@@ -10,12 +10,8 @@
 USE loan_db;
 GO
 
-INSERT INTO dbo.loan_application_raw
-    (application_id, customer_id, branch_code, loan_amount, loan_type,
-     application_date, first_name, last_name, ssn_hash, phone_number,
-     address_line1, city, state_code, zip_code, email_hash,
-     collateral_value, source_system, load_timestamp)
-VALUES
+MERGE dbo.loan_application_raw AS target
+USING (VALUES
 -- Clean records
 ('APP-001', 'CUST-001', 'BR-01', 250000.00, 'MORTGAGE',
  '2024-01-15', 'John', 'Doe', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
@@ -80,5 +76,44 @@ VALUES
  NULL, 'Grace', 'Hopper', 'd9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0',
  '5558881234', '999 Navy Pier', 'Annapolis', 'MD', '21401',
  'e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1',
- NULL, 'BRANCH_INTAKE_v2', GETUTCDATE());
+ NULL, 'BRANCH_INTAKE_v2', GETUTCDATE())
+) AS source (
+    application_id, customer_id, branch_code, loan_amount, loan_type,
+    application_date, first_name, last_name, ssn_hash, phone_number,
+    address_line1, city, state_code, zip_code, email_hash,
+    collateral_value, source_system, load_timestamp
+)
+ON target.application_id = source.application_id
+WHEN MATCHED THEN
+    UPDATE SET
+        customer_id = source.customer_id,
+        branch_code = source.branch_code,
+        loan_amount = source.loan_amount,
+        loan_type = source.loan_type,
+        application_date = source.application_date,
+        first_name = source.first_name,
+        last_name = source.last_name,
+        ssn_hash = source.ssn_hash,
+        phone_number = source.phone_number,
+        address_line1 = source.address_line1,
+        city = source.city,
+        state_code = source.state_code,
+        zip_code = source.zip_code,
+        email_hash = source.email_hash,
+        collateral_value = source.collateral_value,
+        source_system = source.source_system,
+        load_timestamp = source.load_timestamp
+WHEN NOT MATCHED THEN
+    INSERT (
+        application_id, customer_id, branch_code, loan_amount, loan_type,
+        application_date, first_name, last_name, ssn_hash, phone_number,
+        address_line1, city, state_code, zip_code, email_hash,
+        collateral_value, source_system, load_timestamp
+    )
+    VALUES (
+        source.application_id, source.customer_id, source.branch_code, source.loan_amount, source.loan_type,
+        source.application_date, source.first_name, source.last_name, source.ssn_hash, source.phone_number,
+        source.address_line1, source.city, source.state_code, source.zip_code, source.email_hash,
+        source.collateral_value, source.source_system, source.load_timestamp
+    );
 GO

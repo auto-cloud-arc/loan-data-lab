@@ -62,7 +62,15 @@ jobs:
       - name: Run SQL schema scripts with Entra token
         shell: pwsh
         run: |
+          $sqlFiles = @(
+            'src/sqlserver/schema/01_create_tables.sql'
+            'src/sqlserver/seed/02_seed_loan_application_raw.sql'
+            'src/sqlserver/seed/03_seed_customer_raw.sql'
+            'src/sqlserver/seed/04_seed_collateral_raw.sql'
+            'src/sqlserver/seed/05_seed_branch_reference.sql'
+          )
+
           ./src/sqlserver/scripts/apply_sql_files.ps1 `
             -ServerInstance "${{ steps.sqlserver.outputs.sql_server_fqdn }}" `
             -Database loan_db `
-            -SqlFiles 'src/sqlserver/schema/01_create_tables.sql','src/sqlserver/seed/05_seed_branch_reference.sql'
+            -SqlFiles $sqlFiles

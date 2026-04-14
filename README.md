@@ -128,6 +128,7 @@ See [docs/demo-script.md](docs/demo-script.md) for the full step-by-step guide.
 - [Domain Story](docs/domain-story.md)
 - [Data Contracts](docs/data-contracts.md)
 - [Onboarding Guide](docs/onboarding-guide.md)
+- [Azure Deployment Runbook](docs/azure-deployment-runbook.md)
 - [Demo Script](docs/demo-script.md)
 
 ## Technology stack
