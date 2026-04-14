@@ -1,8 +1,8 @@
 ---
 description: Data Engineer Agent for Snowpark, SQL, and data lineage tasks
 tools:
-  - codebase
-  - githubRepo
+  - search/codebase
+  - web/githubRepo
   - search
 ---
 

@@ -45,9 +45,7 @@ Azure SQL Server (legacy)
 cd src/data-cleaner-csharp
 dotnet restore ContosoLoanCleaner.sln
 dotnet build ContosoLoanCleaner.sln
-dotnet run --project ContosoLoanCleaner -- \
-  ../../sample-data/raw/loan_applications_raw.csv \
-  ../../sample-data/cleaned/loan_applications_cleaned.csv
+dotnet run --project ContosoLoanCleaner -- ../../sample-data/raw/loan_applications_raw.csv ../../sample-data/cleaned/loan_applications_cleaned.csv
 dotnet test ContosoLoanCleaner.sln
 ```
 
