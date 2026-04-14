@@ -1,0 +1,10 @@
+CustomerId,FirstName,LastName,DateOfBirth,SsnHash,EmailHash,PhoneNumber,AddressLine1,City,StateCode,ZipCode,CreditScore,LoadTimestamp
+CUST-001,John,Doe,1980-05-15,abc123hash,def456hash,5555551234,123 Main St,Los Angeles,CA,90210,720,2024-01-01T00:00:00Z
+CUST-001,John,Doe,1980-05-15,abc123hash,def456hash,5555551234,123 Main St,Los Angeles,CA,90210,720,2024-01-15T00:00:00Z
+CUST-002,Jane,Smith,1975-08-22,bcd234hash,efg567hash,5559876543,456 Oak Ave,Chicago,IL,60601,680,2024-01-01T00:00:00Z
+CUST-003,Bob,Jones,1992-11-30,cde345hash,fgh678hash,5554441234,789 Pine Rd,Houston,TX,77001,590,2024-01-01T00:00:00Z
+CUST-004,Alice,Brown,1988-03-14,def456hash,ghi789hash,5552221234,100 Corp Blvd,New York,NY,10001,780,2024-01-01T00:00:00Z
+CUST-005,Diana,Prince,1985-07-04,efg567hash,hij890hash,5554441234,555 Hero Ave,Seattle,WA,98101,810,2024-01-01T00:00:00Z
+CUST-006,Eve,Adams,1990-12-25,fgh678hash,ijk901hash,5556661234,777 Garden St,Boston,MA,02101,740,2024-01-01T00:00:00Z
+CUST-007,Frank,Castle,1978-09-09,ghi789hash,jkl012hash,5557771234,888 Punisher Rd,Miami,FL,33101,650,2024-01-01T00:00:00Z
+CUST-008,Grace,Hopper,1906-12-09,hij890hash,klm123hash,5558881234,999 Navy Pier,Annapolis,MD,21401,760,2024-01-01T00:00:00Z

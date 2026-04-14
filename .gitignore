@@ -1,3 +1,10 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

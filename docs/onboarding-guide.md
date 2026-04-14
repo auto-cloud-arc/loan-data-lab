@@ -1,0 +1,230 @@
+# Onboarding Guide — Contoso Bank Loan Data Modernization Lab
+
+Welcome to the Contoso Bank Loan Data Modernization Lab. This guide walks you through setting up your local development environment and running every component of the pipeline.
+
+---
+
+## Prerequisites
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Git | 2.40+ | `git --version` |
+| .NET SDK | 8.0+ | `dotnet --version` |
+| Python | 3.11+ | `python --version` |
+| VS Code | Latest | With GitHub Copilot extension |
+| Azure CLI | 2.57+ | For infra deployment (`az --version`) |
+| Snowflake account | Any | Only required for live Snowpark tests |
+
+---
+
+## 1. Clone the Repository
+
+```bash
+git clone https://github.com/auto-cloud-arc/loan-data-lab.git
+cd loan-data-lab
+```
+
+---
+
+## 2. Running the C# Data Cleaner
+
+The C# cleaner normalizes and validates raw loan application CSV extracts.
+
+### Build and test
+
+```bash
+cd src/data-cleaner-csharp
+dotnet restore ContosoLoanCleaner.sln
+dotnet build ContosoLoanCleaner.sln --configuration Release
+dotnet test ContosoLoanCleaner.sln --configuration Release --verbosity normal
+```
+
+### Run against sample data
+
+```bash
+dotnet run --project ContosoLoanCleaner -- \
+  ../../sample-data/raw/loan_applications_raw.csv \
+  ../../sample-data/cleaned/loan_applications_cleaned.csv \
+  ../../sample-data/expected/dq_exception_report_output.json
+```
+
+Expected output:
+```
+[08:30:01 INF] Contoso Bank Loan Data Cleaner starting.
+[08:30:01 INF] Input:  ../../sample-data/raw/loan_applications_raw.csv
+[08:30:01 INF] Output: ../../sample-data/cleaned/loan_applications_cleaned.csv
+[08:30:01 WRN] Application APP-005 has 1 validation failure(s).
+[08:30:01 WRN] Application APP-006 has 1 validation failure(s).
+[08:30:01 WRN] Application APP-007 has 1 validation failure(s).
+[08:30:01 WRN] Application APP-010 has 1 validation failure(s).
+[08:30:01 INF] Cleaning complete. 6/10 records passed. Report: ...
+```
+
+### Understanding the output
+
+- **Cleaned CSV**: Records that pass all validation rules
+- **Exception JSON**: Records that failed, with redacted PII and the rule that triggered
+
+---
+
+## 3. Running the QA Validator (Python)
+
+The QA Validator applies business rules to the cleaned data and produces a DQ report.
+
+### Install dependencies
+
+```bash
+pip install pandas pytest
+# Or use the test requirements which include both:
+pip install -r src/qa-validator/tests/requirements-test.txt
+```
+
+### Run tests
+
+```bash
+pytest src/qa-validator/tests/ -v
+```
+
+### Run the full validation against cleaned sample data
+
+```bash
+python src/qa-validator/runners/run_validations.py \
+  --input sample-data/cleaned/loan_applications_cleaned.csv \
+  --report-dir reports/
+```
+
+The runner will create `reports/qa_report_YYYYMMDD_HHMMSS.json` and `.md`.
+
+### Adding a new validation rule
+
+1. Create a function in `src/qa-validator/rules/` that accepts a `pd.DataFrame` and returns `list[ValidationFailure]`
+2. Write a pytest test in `src/qa-validator/tests/`
+3. Register the rule in `src/qa-validator/runners/run_validations.py` under `run_all_validations()`
+
+---
+
+## 4. Running Snowpark Tests Locally (No Snowflake Required)
+
+The Snowpark transform tests test pure-Python helper functions without connecting to Snowflake.
+
+### Install dependencies
+
+```bash
+pip install -r src/snowpark/tests/requirements-test.txt
+```
+
+### Run tests
+
+```bash
+pytest src/snowpark/tests/ -v
+```
+
+These tests cover:
+- `standardize_branch_code()` — branch code normalization
+- `compute_risk_tier()` — LTV-based risk tier computation
+- `reconcile_counts()` — source-to-target count comparison
+
+### Running against a live Snowflake connection
+
+Set environment variables:
+```bash
+export SNOWFLAKE_ACCOUNT=your-account
+export SNOWFLAKE_USER=your-user
+export SNOWFLAKE_PASSWORD=your-password
+export SNOWFLAKE_WAREHOUSE=CONTOSO_TRANSFORM_WH
+export SNOWFLAKE_DATABASE=CONTOSO_LOAN_DB
+export SNOWFLAKE_SCHEMA=CURATED_ZONE
+export SNOWFLAKE_ROLE=CONTOSO_DATA_ENGINEER
+```
+
+Then run a transform directly:
+```python
+from snowflake.snowpark import Session
+from src.snowpark.transforms.borrower_360_transform import run
+
+session = Session.builder.configs({
+    "account": os.environ["SNOWFLAKE_ACCOUNT"],
+    "user": os.environ["SNOWFLAKE_USER"],
+    "password": os.environ["SNOWFLAKE_PASSWORD"],
+    "warehouse": os.environ["SNOWFLAKE_WAREHOUSE"],
+    "database": os.environ["SNOWFLAKE_DATABASE"],
+    "role": os.environ["SNOWFLAKE_ROLE"],
+}).create()
+
+run(session)
+```
+
+---
+
+## 5. Working with Azure SQL (Optional)
+
+To run the SQL scripts against a local or cloud Azure SQL instance:
+
+```bash
+# Using sqlcmd (install from Microsoft)
+sqlcmd -S your-server.database.windows.net -d loan_db -U your-user \
+  -i src/sqlserver/schema/01_create_tables.sql
+sqlcmd -S your-server.database.windows.net -d loan_db -U your-user \
+  -i src/sqlserver/seed/02_seed_loan_application_raw.sql
+```
+
+Or use Azure Data Studio / SSMS and run the scripts manually.
+
+---
+
+## 6. Deploying Infrastructure (Azure)
+
+Infrastructure is managed with Azure Bicep.
+
+```bash
+az login
+az group create --name rg-contoso-loan-dev --location eastus
+az deployment group create \
+  --resource-group rg-contoso-loan-dev \
+  --template-file infra/bicep/main.bicep \
+  --parameters infra/parameters/dev.parameters.json
+```
+
+Or trigger the GitHub Actions workflow manually:
+- Go to **Actions** → **Deploy Azure SQL & Config** → **Run workflow** → select `dev`
+
+---
+
+## 7. CI/CD Overview
+
+| Workflow | Trigger | What it does |
+|----------|---------|-------------|
+| `ci.yml` | Push/PR to `main` or `feature/**` | Builds C# + runs all tests |
+| `validate-data-quality.yml` | Push/PR changing `sample-data/` or `src/qa-validator/` | Runs QA validator, uploads report artifact |
+| `deploy-azure-sql-and-config.yml` | Manual (`workflow_dispatch`) | Deploys Bicep infra + SQL schema |
+
+### Required GitHub Secrets
+
+| Secret | Used by |
+|--------|---------|
+| `AZURE_CREDENTIALS` | `deploy-azure-sql-and-config.yml` |
+| `AZURE_RG` | `deploy-azure-sql-and-config.yml` |
+| `AZURE_SQL_CONNECTION_STRING` | `deploy-azure-sql-and-config.yml` |
+
+---
+
+## 8. Copilot Workshop Features
+
+| Feature | Location |
+|---------|---------|
+| Custom prompt: Snowpark transform | `.copilot/prompts/create-snowpark-transform.prompt.md` |
+| Custom prompt: Validator rule | `.copilot/prompts/generate-validator-rule.prompt.md` |
+| Custom prompt: Legacy SQL explain | `.copilot/prompts/explain-legacy-sql-to-modern-sql.prompt.md` |
+| Data Engineer Agent | `.copilot/agents/data-engineer.agent.md` |
+| QA Validator Agent | `.copilot/agents/qa-validator.agent.md` |
+| Secure Code Reviewer Agent | `.copilot/agents/secure-code-reviewer.agent.md` |
+| Repo-level Copilot instructions | `copilot-instructions.md` |
+
+---
+
+## Getting Help
+
+- See [docs/architecture.md](architecture.md) for the full system diagram
+- See [docs/data-contracts.md](data-contracts.md) for table schemas
+- See [docs/demo-script.md](demo-script.md) for the workshop walkthrough
+- Open an issue using the [Bug Report](.github/ISSUE_TEMPLATE/bug_report.md) template

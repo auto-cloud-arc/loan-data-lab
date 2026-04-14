@@ -1,0 +1,1 @@
+# QA Validator rules package
