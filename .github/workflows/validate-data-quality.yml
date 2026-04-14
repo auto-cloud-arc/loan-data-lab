@@ -1,0 +1,33 @@
+name: Validate Data Quality
+
+on:
+  push:
+    paths:
+      - 'sample-data/**'
+      - 'src/qa-validator/**'
+  pull_request:
+    paths:
+      - 'sample-data/**'
+      - 'src/qa-validator/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Run QA Validation Rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r src/qa-validator/tests/requirements-test.txt
+      - name: Run QA validator
+        run: python src/qa-validator/runners/run_validations.py --input sample-data/cleaned/loan_applications_cleaned.csv --report-dir qa-reports
+      - name: Upload QA report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-report
+          path: qa-reports/

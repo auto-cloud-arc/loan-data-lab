@@ -1,0 +1,7 @@
+ApplicationId,CustomerId,FirstName,LastName,LoanAmount,LoanType,CollateralValue,ApplicationDate,BranchCodeNormalized,BranchName,Region,RiskTier,TransformedAt
+APP-001,CUST-001,John,Doe,250000,MORTGAGE,300000,2024-01-15,BR-01,Los Angeles Downtown,West,LOW,2024-04-15T08:30:00
+APP-002,CUST-002,Jane,Smith,15000,AUTO,18000,2024-02-10,BR-02,Chicago North Side,Midwest,LOW,2024-04-15T08:30:00
+APP-003,CUST-003,Bob,Jones,5000,PERSONAL,,2024-03-01,BR-01,Los Angeles Downtown,West,HIGH,2024-04-15T08:30:00
+APP-004,CUST-001,John,Doe,180000,MORTGAGE,220000,2024-03-15,BR-03,Boston Back Bay,Northeast,MEDIUM,2024-04-15T08:30:00
+APP-008,CUST-006,Eve,Adams,95000,HELOC,150000,2024-04-11,BR-03,Boston Back Bay,Northeast,LOW,2024-04-15T08:30:00
+APP-009,CUST-007,Frank,Castle,12000,AUTO,14000,2024-04-13,BR-02,Chicago North Side,Midwest,MEDIUM,2024-04-15T08:30:00

@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, 'feature/**' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-csharp:
+    name: Build & Test C# Data Cleaner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore dependencies
+        run: dotnet restore src/data-cleaner-csharp/ContosoLoanCleaner.sln
+      - name: Build
+        run: dotnet build src/data-cleaner-csharp/ContosoLoanCleaner.sln --no-restore --configuration Release
+      - name: Test
+        run: dotnet test src/data-cleaner-csharp/ContosoLoanCleaner.sln --no-build --configuration Release --verbosity normal
+
+  test-python:
+    name: Test Python (Snowpark & QA Validator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Snowpark test dependencies
+        run: pip install -r src/snowpark/tests/requirements-test.txt
+      - name: Run Snowpark tests
+        run: pytest src/snowpark/tests/ -v
+      - name: Install QA Validator test dependencies
+        run: pip install -r src/qa-validator/tests/requirements-test.txt
+      - name: Run QA Validator tests
+        run: pytest src/qa-validator/tests/ -v

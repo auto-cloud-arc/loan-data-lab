@@ -1,0 +1,7 @@
+ApplicationId,CustomerId,BranchCode,LoanAmount,LoanType,ApplicationDate,FirstName,LastName,Ssn,PhoneNumber,AddressLine1,City,StateCode,ZipCode,Email,CollateralValue
+APP-001,CUST-001,BR-01,250000,MORTGAGE,2024-01-15,John,Doe,123-45-6789,(555) 555-1234,123 Main St,Los Angeles,CA,90210,jdoe@example.com,300000
+APP-002,CUST-002,BR-02,15000,AUTO,2024-02-10,Jane,Smith,987-65-4321,(555) 555-9876,456 Oak Ave,Chicago,IL,60601,jsmith@example.com,18000
+APP-003,CUST-003,BR-01,5000,PERSONAL,2024-03-01,Bob,Jones,555-44-3333,(555) 444-1234,789 Pine Rd,Houston,TX,77001,bjones@example.com,
+APP-004,CUST-001,BR-03,180000,MORTGAGE,2024-03-15,John,Doe,123-45-6789,(555) 555-1234,123 Main St,Los Angeles,CA,90210,jdoe@example.com,220000
+APP-008,CUST-006,BR-03,95000,HELOC,2024-04-11,Eve,Adams,666-77-8888,(555) 666-1234,777 Garden St,Boston,MA,02101,eadams@example.com,150000
+APP-009,CUST-007,BR-02,12000,AUTO,2024-04-13,Frank,Castle,777-88-9999,(555) 777-1234,888 Punisher Rd,Miami,FL,33101,fcastle@example.com,14000
