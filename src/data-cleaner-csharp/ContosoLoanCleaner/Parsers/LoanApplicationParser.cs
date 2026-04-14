@@ -23,10 +23,11 @@ public class LoanApplicationParser : ILoanApplicationParser
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
+            HeaderValidated = null,
             MissingFieldFound = null,
             BadDataFound = context =>
-                _logger.LogWarning("Bad CSV data at row {Row}: {Field}",
-                    context.Context?.Parser?.Row, context.Field)
+                _logger.LogWarning("Malformed CSV token detected at row {Row}.",
+                    context.Context?.Parser?.Row)
         };
 
         using var reader = new StreamReader(filePath);
@@ -35,8 +36,7 @@ public class LoanApplicationParser : ILoanApplicationParser
         var records = csv.GetRecords<LoanApplication>();
         foreach (var record in records)
         {
-            _logger.LogDebug("Parsed application {AppId} for customer {CustomerId}",
-                record.ApplicationId, record.CustomerId);
+            _logger.LogDebug("Parsed application {AppId}.", record.ApplicationId);
             yield return record;
         }
     }

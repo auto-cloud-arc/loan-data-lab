@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-04-14T17:06:38.444584",
+  "input_file": "sample-data/cleaned/loan_applications_cleaned.csv",
+  "total_records": 6,
+  "total_failures": 0,
+  "pass_rate": "100.0%",
+  "failures": [],
+  "reconciliation": {
+    "table_name": "loan_application_curated",
+    "source_count": 10,
+    "target_count": 9,
+    "tolerance_pct": 0.01,
+    "passed": false,
+    "diff_pct": 0.1,
+    "message": "FAIL: source=10, target=9 (10.00% exceeds 1.00%)."
+  }
+}

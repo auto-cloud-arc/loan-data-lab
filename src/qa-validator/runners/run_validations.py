@@ -6,11 +6,8 @@ Usage:
 """
 from __future__ import annotations
 import argparse
-import json
 import logging
-import os
 import sys
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -24,6 +21,8 @@ from rules.business_rules import (
     check_positive_loan_amount,
     check_collateral_for_secured_loans,
 )
+from rules.reconciliation_rules import check_row_count_reconciliation
+from reports.report_generator import generate_json_report, generate_markdown_report
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -45,51 +44,33 @@ def run_all_validations(df: pd.DataFrame) -> list[dict]:
     return failures
 
 
-def generate_report(df: pd.DataFrame, failures: list[dict], report_dir: str, input_file: str) -> str:
-    """Write JSON and Markdown QA reports and return the JSON report path."""
-    Path(report_dir).mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    report = {
-        "generated_at": datetime.utcnow().isoformat(),
-        "input_file": input_file,
-        "total_records": len(df),
-        "total_failures": len(failures),
-        "pass_rate": f"{(1 - len(failures) / max(len(df), 1)) * 100:.1f}%",
-        "failures": failures,
-    }
-
-    json_path = os.path.join(report_dir, f"qa_report_{timestamp}.json")
-    with open(json_path, "w") as f:
-        json.dump(report, f, indent=2, default=str)
-    logger.info("QA report written to %s", json_path)
-
-    md_path = os.path.join(report_dir, f"qa_report_{timestamp}.md")
-    with open(md_path, "w") as f:
-        f.write("# QA Validation Report\n\n")
-        f.write(f"**Generated:** {report['generated_at']}  \n")
-        f.write(f"**Input:** {input_file}  \n")
-        f.write(f"**Total records:** {report['total_records']}  \n")
-        f.write(f"**Total failures:** {report['total_failures']}  \n")
-        f.write(f"**Pass rate:** {report['pass_rate']}  \n\n")
-        if failures:
-            f.write("## Failures\n\n")
-            f.write("| Row | Field | Rule | Value | Message | Severity |\n")
-            f.write("|-----|-------|------|-------|---------|----------|\n")
-            for fail in failures:
-                f.write(
-                    f"| {fail['row_index']} | {fail['field']} | {fail['rule_name']} | "
-                    f"{fail['actual_value']} | {fail['message']} | {fail['severity']} |\n"
-                )
-        else:
-            f.write("## ✅ All validations passed!\n")
-    logger.info("Markdown report written to %s", md_path)
-    return json_path
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Contoso Bank QA Validator")
     parser.add_argument("--input", required=True, help="Path to cleaned loan CSV file")
     parser.add_argument("--report-dir", default="reports", help="Output directory for QA reports")
+    parser.add_argument(
+        "--source-count",
+        type=int,
+        default=None,
+        help="Optional source system row count for reconciliation",
+    )
+    parser.add_argument(
+        "--target-count",
+        type=int,
+        default=None,
+        help="Optional curated target row count for reconciliation",
+    )
+    parser.add_argument(
+        "--reconciliation-table",
+        default="loan_application_curated",
+        help="Logical table name for reconciliation summary",
+    )
+    parser.add_argument(
+        "--reconciliation-tolerance",
+        type=float,
+        default=0.01,
+        help="Allowed row-count difference ratio for reconciliation (default: 0.01)",
+    )
     args = parser.parse_args()
 
     logger.info("Loading data from %s", args.input)
@@ -97,12 +78,42 @@ def main() -> int:
     logger.info("Loaded %d records.", len(df))
 
     failures = run_all_validations(df)
-    generate_report(df, failures, args.report_dir, args.input)
+
+    source_count = args.source_count if args.source_count is not None else len(df)
+    target_count = args.target_count if args.target_count is not None else len(df)
+    reconciliation = check_row_count_reconciliation(
+        table_name=args.reconciliation_table,
+        source_count=source_count,
+        target_count=target_count,
+        tolerance_pct=args.reconciliation_tolerance,
+    )
+
+    json_path = generate_json_report(
+        failures=failures,
+        total_records=len(df),
+        input_file=args.input,
+        report_dir=args.report_dir,
+        reconciliation=reconciliation,
+    )
+    md_path = generate_markdown_report(
+        failures=failures,
+        total_records=len(df),
+        input_file=args.input,
+        report_dir=args.report_dir,
+        reconciliation=reconciliation,
+    )
+
+    logger.info("QA report written to %s", json_path)
+    logger.info("Markdown report written to %s", md_path)
 
     if failures:
         critical = [f for f in failures if f.get("severity") == "critical"]
         logger.warning("%d total failures (%d critical).", len(failures), len(critical))
         return 1 if critical else 0
+
+    if not reconciliation.passed:
+        logger.warning("Reconciliation failed: %s", reconciliation.message)
+        return 1
 
     logger.info("All validations passed.")
     return 0

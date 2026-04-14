@@ -59,6 +59,47 @@ python src/qa-validator/runners/run_validations.py \
   --report-dir reports/
 ```
 
+#### QA Rule Coverage and Report Outputs
+
+The QA validator enforces banking-focused rules for curated loan data quality:
+
+- Null business keys: `application_id`, `customer_id`, `branch_code`
+- Invalid/future application dates
+- Negative or non-numeric loan amounts
+- Missing collateral for secured products (`MORTGAGE`, `AUTO`, `HELOC`)
+- Source-to-target row count reconciliation with configurable tolerance
+
+Implementation sources:
+
+- Null key checks: [src/qa-validator/rules/null_check_rules.py](src/qa-validator/rules/null_check_rules.py)
+- Date checks: [src/qa-validator/rules/date_validation_rules.py](src/qa-validator/rules/date_validation_rules.py)
+- Business checks: [src/qa-validator/rules/business_rules.py](src/qa-validator/rules/business_rules.py)
+- Reconciliation checks: [src/qa-validator/rules/reconciliation_rules.py](src/qa-validator/rules/reconciliation_rules.py)
+- Report writers (JSON + Markdown): [src/qa-validator/reports/report_generator.py](src/qa-validator/reports/report_generator.py)
+- Validation runner orchestration and CLI args: [src/qa-validator/runners/run_validations.py](src/qa-validator/runners/run_validations.py)
+
+Optional reconciliation arguments:
+
+```bash
+python src/qa-validator/runners/run_validations.py \
+     --input sample-data/cleaned/loan_applications_cleaned.csv \
+     --report-dir reports/ \
+     --source-count 10 \
+     --target-count 9 \
+     --reconciliation-table loan_application_curated \
+     --reconciliation-tolerance 0.01
+```
+
+Generated outputs:
+
+- `qa_report_YYYYMMDD_HHMMSS.json`: structured machine-readable DQ report
+- `qa_report_YYYYMMDD_HHMMSS.md`: human-readable validation summary
+
+Exit behavior:
+
+- Exit code `0`: no critical validation failures and reconciliation passed
+- Exit code `1`: critical validation failures and/or reconciliation failure
+
 ### Snowpark Tests (local, no Snowflake required)
 
 ```bash
