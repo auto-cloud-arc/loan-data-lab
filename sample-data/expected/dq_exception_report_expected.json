@@ -2,8 +2,8 @@
   "generated_at": "2024-04-15T08:30:00.000000",
   "input_file": "sample-data/raw/loan_applications_raw.csv",
   "total_records": 10,
-  "total_failures": 4,
-  "pass_rate": "60.0%",
+  "total_failures": 3,
+  "pass_rate": "70.0%",
   "failures": [
     {
       "row_index": 4,
@@ -27,14 +27,6 @@
       "rule_name": "positive_loan_amount",
       "actual_value": "-500.0",
       "message": "Loan amount must be greater than zero. Got: -500.0",
-      "severity": "critical"
-    },
-    {
-      "row_index": 6,
-      "field": "collateral_value",
-      "rule_name": "collateral_required_for_secured_loan",
-      "actual_value": "500000.0",
-      "message": "Collateral value is required for secured loan type 'MORTGAGE'.",
       "severity": "critical"
     }
   ]
