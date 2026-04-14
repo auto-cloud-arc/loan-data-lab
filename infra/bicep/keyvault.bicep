@@ -10,7 +10,9 @@ param resourcePrefix string
 @description('Object ID of the principal (user or service principal) that receives admin access')
 param adminObjectId string = ''
 
-var keyVaultName = '${resourcePrefix}-kv'
+var rawKeyVaultName = '${resourcePrefix}-kv'
+// Key Vault names must be 3–24 characters; truncate if needed
+var keyVaultName = length(rawKeyVaultName) > 24 ? substring(rawKeyVaultName, 0, 24) : rawKeyVaultName
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName

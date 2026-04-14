@@ -1,3 +1,7 @@
+"""
+Tests for source_target_reconciliation module and loan_application_curated_transform helpers.
+Both are covered here as lightweight integration tests for the snowpark pipeline logic.
+"""
 import pytest
 from reconciliation.source_target_reconciliation import reconcile_counts
 

@@ -10,6 +10,10 @@ param location string = resourceGroup().location
 @description('Contoso project name prefix')
 param projectName string = 'contoso-loan'
 
+@description('SQL Server administrator password — provide via pipeline secret')
+@secure()
+param sqlAdminPassword string
+
 var resourcePrefix = '${projectName}-${environmentName}'
 
 module keyVault 'keyvault.bicep' = {
@@ -28,6 +32,7 @@ module sqlServer 'sql.bicep' = {
     location: location
     resourcePrefix: resourcePrefix
     keyVaultName: keyVault.outputs.keyVaultName
+    sqlAdminPassword: sqlAdminPassword
   }
 }
 
