@@ -61,11 +61,21 @@ public class LoanApplicationValidator : ILoanApplicationValidator
             results.Add(Fail(application.ApplicationId, nameof(application.ZipCode),
                 "ValidZipCode", application.ZipCode, "ZIP code must be 5 digits."));
 
-        if (application.ApplicationDate.HasValue &&
-            application.ApplicationDate.Value.Date > DateTime.UtcNow.Date)
-            results.Add(Fail(application.ApplicationId, nameof(application.ApplicationDate),
-                "ApplicationDateNotFuture", application.ApplicationDate.Value.ToString("yyyy-MM-dd"),
-                "Application date cannot be in the future."));
+        if (!string.IsNullOrWhiteSpace(application.ApplicationDate))
+        {
+            if (!_dateNormalizer.IsValid(application.ApplicationDate))
+            {
+                results.Add(Fail(application.ApplicationId, nameof(application.ApplicationDate),
+                    "ValidApplicationDate", application.ApplicationDate,
+                    "Application date must be a valid date."));
+            }
+            else if (!_dateNormalizer.IsValidApplicationDate(application.ApplicationDate))
+            {
+                results.Add(Fail(application.ApplicationId, nameof(application.ApplicationDate),
+                    "ApplicationDateNotFuture", application.ApplicationDate,
+                    "Application date cannot be in the future."));
+            }
+        }
 
         if (application.LoanType.Equals("MORTGAGE", StringComparison.OrdinalIgnoreCase) ||
             application.LoanType.Equals("HELOC", StringComparison.OrdinalIgnoreCase) ||
