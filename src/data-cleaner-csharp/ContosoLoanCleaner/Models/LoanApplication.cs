@@ -7,7 +7,7 @@ public class LoanApplication
     public string BranchCode { get; set; } = string.Empty;
     public decimal LoanAmount { get; set; }
     public string LoanType { get; set; } = string.Empty;
-    public DateTime? ApplicationDate { get; set; }
+    public string ApplicationDate { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Ssn { get; set; } = string.Empty;

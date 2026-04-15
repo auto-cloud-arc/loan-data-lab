@@ -19,7 +19,7 @@ public class LoanApplicationValidatorTests
         BranchCode = "BR-01",
         LoanAmount = 250000,
         LoanType = "MORTGAGE",
-        ApplicationDate = DateTime.UtcNow.AddDays(-1),
+        ApplicationDate = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd"),
         PhoneNumber = "(555) 555-1234",
         StateCode = "CA",
         ZipCode = "90210",
@@ -56,9 +56,18 @@ public class LoanApplicationValidatorTests
     public void Validate_FutureApplicationDate_ReturnsFailure()
     {
         var app = ValidApplication();
-        app.ApplicationDate = DateTime.UtcNow.AddDays(5);
+        app.ApplicationDate = DateTime.UtcNow.AddDays(5).ToString("yyyy-MM-dd");
         var results = _validator.Validate(app).ToList();
         Assert.Contains(results, r => r.RuleName == "ApplicationDateNotFuture");
+    }
+
+    [Fact]
+    public void Validate_InvalidApplicationDate_ReturnsFailure()
+    {
+        var app = ValidApplication();
+        app.ApplicationDate = "not-a-date";
+        var results = _validator.Validate(app).ToList();
+        Assert.Contains(results, r => r.RuleName == "ValidApplicationDate");
     }
 
     [Fact]

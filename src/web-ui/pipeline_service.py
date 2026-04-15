@@ -16,6 +16,42 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CLEANER_PROJECT = REPO_ROOT / "src/data-cleaner-csharp/ContosoLoanCleaner/ContosoLoanCleaner.csproj"
 VALIDATOR_SCRIPT = REPO_ROOT / "src/qa-validator/runners/run_validations.py"
 SAMPLE_DATA_DIR = REPO_ROOT / "sample-data/raw"
+REQUIRED_COLUMNS = {
+    "ApplicationId",
+    "CustomerId",
+    "BranchCode",
+    "LoanAmount",
+    "LoanType",
+    "ApplicationDate",
+    "FirstName",
+    "LastName",
+    "Ssn",
+    "PhoneNumber",
+    "AddressLine1",
+    "City",
+    "StateCode",
+    "ZipCode",
+    "Email",
+    "CollateralValue",
+}
+VALIDATOR_COLUMN_MAP = {
+    "ApplicationId": "application_id",
+    "CustomerId": "customer_id",
+    "BranchCode": "branch_code",
+    "LoanAmount": "loan_amount",
+    "LoanType": "loan_type",
+    "ApplicationDate": "application_date",
+    "FirstName": "first_name",
+    "LastName": "last_name",
+    "Ssn": "ssn",
+    "PhoneNumber": "phone_number",
+    "AddressLine1": "address_line_1",
+    "City": "city",
+    "StateCode": "state_code",
+    "ZipCode": "zip_code",
+    "Email": "email",
+    "CollateralValue": "collateral_value",
+}
 
 
 class PipelineExecutionError(RuntimeError):
@@ -48,7 +84,11 @@ class PipelineArtifacts:
 
 
 def list_sample_inputs() -> list[Path]:
-    return sorted(SAMPLE_DATA_DIR.glob("*.csv"))
+    return sorted(
+        path
+        for path in SAMPLE_DATA_DIR.glob("*.csv")
+        if REQUIRED_COLUMNS.issubset(set(pd.read_csv(path, nrows=0).columns))
+    )
 
 
 def sanitize_file_name(file_name: str) -> str:
@@ -88,6 +128,16 @@ def prepare_sample_input(sample_path: Path) -> tuple[str, Path]:
     return resolved_sample.name, resolved_sample
 
 
+def validate_input_dataframe(input_df: pd.DataFrame) -> None:
+    missing_columns = sorted(REQUIRED_COLUMNS.difference(input_df.columns))
+    if missing_columns:
+        raise ValueError(f"Input CSV is missing required columns: {', '.join(missing_columns)}")
+
+
+def prepare_validator_input(cleaned_df: pd.DataFrame, validator_input_path: Path) -> None:
+    cleaned_df.rename(columns=VALIDATOR_COLUMN_MAP).to_csv(validator_input_path, index=False)
+
+
 def run_pipeline(
     *,
     input_name: str,
@@ -98,6 +148,7 @@ def run_pipeline(
 ) -> PipelineArtifacts:
     input_bytes = input_path.read_bytes()
     input_df = dataframe_from_csv_bytes(input_bytes)
+    validate_input_dataframe(input_df)
 
     with TemporaryDirectory(prefix="loan-data-lab-ui-") as temp_dir:
         workspace_dir = Path(temp_dir)
@@ -164,11 +215,13 @@ def run_pipeline(
             )
 
         qa_report_dir = workspace_dir / "qa-reports"
+        validator_input_path = workspace_dir / "validator_input.csv"
+        prepare_validator_input(cleaned_df, validator_input_path)
         validator_command = [
             sys.executable,
             str(VALIDATOR_SCRIPT),
             "--input",
-            str(cleaned_csv_path),
+            str(validator_input_path),
             "--report-dir",
             str(qa_report_dir),
             "--reconciliation-tolerance",

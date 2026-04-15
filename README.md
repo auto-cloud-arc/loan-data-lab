@@ -106,6 +106,7 @@ flowchart LR
 ├── infra/bicep/       # Azure Bicep IaC (SQL Server, Key Vault, Storage)
 ├── src/
 │   ├── data-cleaner-csharp/   # .NET 8 C# console app
+│   ├── web-ui/                # Streamlit web UI for manual pipeline testing
 │   ├── sqlserver/             # Azure SQL schema, seed, stored procs
 │   ├── snowflake/             # Snowflake DDL, stages, procedures, roles
 │   ├── snowpark/              # Python Snowpark transforms + tests
@@ -183,6 +184,20 @@ Exit behavior:
 pip install pytest pytest-mock
 pytest src/snowpark/tests/ -v
 ```
+
+### Web UI for manual testing
+
+```bash
+pip install -r src/web-ui/requirements.txt
+streamlit run src/web-ui/app.py
+```
+
+The web UI lets you:
+
+- run the C# cleaner and QA validator end to end from a browser
+- test with the bundled sample CSV or upload your own raw loan CSV
+- inspect cleaner exceptions and QA failures
+- download cleaned CSV, JSON QA output, and Markdown QA summaries
 
 ## Outputs and artifacts
 

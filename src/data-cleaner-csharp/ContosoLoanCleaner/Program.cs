@@ -74,6 +74,7 @@ static async Task<int> RunAsync(string[] args)
             app.ZipCode = AddressNormalizer.NormalizeZipCode(app.ZipCode);
             app.PhoneNumber = phoneNormalizer.Normalize(app.PhoneNumber);
             app.LoanType = app.LoanType?.Trim().ToUpperInvariant() ?? string.Empty;
+            app.ApplicationDate = dateNormalizer.Normalize(app.ApplicationDate);
 
             var failures = validator.Validate(app).ToList();
 

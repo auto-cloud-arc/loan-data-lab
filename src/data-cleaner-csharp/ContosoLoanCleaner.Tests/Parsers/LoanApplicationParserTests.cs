@@ -57,6 +57,28 @@ public class LoanApplicationParserTests
     }
 
     [Fact]
+    public void Parse_InvalidApplicationDate_PreservesOriginalValue()
+    {
+        var csvPath = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.csv");
+        try
+        {
+            File.WriteAllText(csvPath,
+                "ApplicationId,CustomerId,BranchCode,LoanAmount,LoanType,ApplicationDate,FirstName,LastName,Ssn,PhoneNumber,AddressLine1,City,StateCode,ZipCode,Email,CollateralValue\n" +
+                "APP-001,CUST-001,BR-01,250000,MORTGAGE,not-a-date,John,Doe,123-45-6789,5555551234,123 Main St,Los Angeles,CA,90210,jdoe@example.com,300000\n");
+
+            var records = _parser.Parse(csvPath).ToList();
+
+            Assert.Single(records);
+            Assert.Equal("not-a-date", records[0].ApplicationDate);
+        }
+        finally
+        {
+            if (File.Exists(csvPath))
+                File.Delete(csvPath);
+        }
+    }
+
+    [Fact]
     public void Parse_MissingHeaders_UsesDefaultsForUnmappedFields()
     {
         var csvPath = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.csv");
