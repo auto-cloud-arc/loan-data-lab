@@ -100,8 +100,8 @@ flowchart LR
 
 ```text
 .
-├── .github/           # CI/CD workflows, issue templates, PR template
-├── .copilot/          # Prompt files and agent definitions for workshop
+├── .github/           # CI/CD workflows, issue templates, PR template, agent definitions
+├── .copilot/          # Prompt files for workshop
 ├── docs/              # Architecture, domain story, data contracts, demo script
 ├── infra/bicep/       # Azure Bicep IaC (SQL Server, Key Vault, Storage)
 ├── src/
@@ -202,17 +202,24 @@ pytest src/snowpark/tests/ -v
 7. **Snowpark** — Write and run transformation jobs
 8. **QA Validator** — Create and run validation rules
 9. **Debug** — Trace a failing pipeline stage with Copilot
-10. **Agents** — Use custom agents and prompts from `.copilot/`
+10. **Agents** — Use custom agents from `.github/agents/` and prompts from `.copilot/prompts/` and `.github/prompts/`
 
 See [docs/demo-script.md](docs/demo-script.md) for the full step-by-step guide.
 
-## Key QA rules enforced
+## Copilot Workshop Features
 
-- Null business keys: `application_id`, `customer_id`, `branch_code`
-- Invalid or future application dates
-- Negative or non-numeric loan amounts
-- Missing collateral for secured products such as `MORTGAGE`, `AUTO`, and `HELOC`
-- Source-to-target reconciliation with configurable tolerance
+| Feature | Location |
+| ------- | -------- |
+| Custom prompt: Snowpark transform | `.copilot/prompts/create-snowpark-transform.prompt.md` |
+| Custom prompt: Validator rule | `.copilot/prompts/generate-validator-rule.prompt.md` |
+| Custom prompt: Legacy SQL explain | `.copilot/prompts/explain-legacy-sql-to-modern-sql.prompt.md` |
+| Custom prompt: C# cleaner implementation | `.github/prompts/implement-csharp-cleaner.prompt.md` |
+| Data Engineer Agent | `.github/agents/data-engineer.agent.md` |
+| QA Validator Agent | `.github/agents/qa-validator.agent.md` |
+| Secure Code Reviewer Agent | `.github/agents/secure-code-reviewer.agent.md` |
+| Documentation Updater Agent | `.github/agents/documentation-updater.agent.md` |
+| Product Docs Agent | `.github/agents/product-docs.agent.md` |
+| Repo-level Copilot instructions | `copilot-instructions.md` |
 
 ## Documentation
 
@@ -222,6 +229,7 @@ See [docs/demo-script.md](docs/demo-script.md) for the full step-by-step guide.
 - [Onboarding Guide](docs/onboarding-guide.md)
 - [Azure Deployment Runbook](docs/azure-deployment-runbook.md)
 - [Demo Script](docs/demo-script.md)
+- [Product Requirements Document](docs/prd-loan-data-modernization-lab.md)
 
 ## Technology stack
 
