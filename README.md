@@ -9,7 +9,7 @@ A GitHub Copilot workshop repository built around **modernizing Contoso Bank's l
 
 Contoso Bank processes daily loan application extracts with real-world data quality issues: nulls, malformed phone numbers, invalid state codes, duplicate customer IDs, and future application dates. This repo demonstrates the full journey:
 
-```
+```text
 Azure SQL Server (legacy)
         ↓
   C# Data Cleaner  (normalize, validate, report exceptions)
@@ -19,9 +19,86 @@ Azure SQL Server (legacy)
    QA Validator  (enforce business rules, produce DQ report)
 ```
 
+## Business challenge
+
+- Legacy problem: daily loan extracts arrive with nulls, malformed data, duplicates, and invalid or future-dated records.
+- Goal: modernize the onboarding and data quality pipeline from Azure SQL Server to Snowflake while making validation, testing, and automation explicit.
+
+## Architecture and data flow
+
+![Loan Data Lab architecture](images/loan-data-architecture.png)
+
+```mermaid
+flowchart LR
+     subgraph Sources[Source and ingestion]
+          sql[Azure SQL Server\nlegacy source]
+          csv[CSV extracts]
+          api[External or upstream feeds]
+     end
+
+     subgraph Execution[Execution layer]
+          cleaner[C# Data Cleaner\n.NET 8]
+          snowpark[Snowpark transforms\nPython]
+          validator[QA Validator\npandas]
+          cicd[GitHub Actions\nCI/CD and test orchestration]
+          infra[Azure Bicep\ninfra provisioning]
+     end
+
+     subgraph Data[Data layer]
+          raw[Raw data]
+          validated[Validated and cleaned data]
+          curated[Curated Snowflake tables]
+          models[Models and analysis-ready outputs]
+          reports[JSON and Markdown DQ reports]
+     end
+
+     sql --> cleaner
+     csv --> cleaner
+     api --> cleaner
+     cleaner --> raw
+     raw --> validated
+     validated --> snowpark
+     snowpark --> curated
+     curated --> validator
+     curated --> models
+     validator --> reports
+     cicd -.-> cleaner
+     cicd -.-> snowpark
+     cicd -.-> validator
+     infra -.-> sql
+     infra -.-> reports
+```
+
+### End-to-end flow
+
+#### Ingestion and cleaning
+
+- Source systems include Azure SQL Server, CSV extracts, and upstream feeds.
+- The C# .NET 8 data cleaner normalizes fields, validates records, and reports exceptions such as nulls, invalid dates, malformed fields, and duplicates.
+
+#### Transformation and curation
+
+- Snowflake on Azure is the modern target platform.
+- Snowpark Python jobs transform cleaned records into curated tables for downstream consumption.
+
+#### Quality assurance
+
+- The Python QA validator enforces business and reconciliation rules on curated datasets.
+- Output artifacts include machine-readable JSON reports and human-readable Markdown summaries.
+
+#### Reporting and analysis
+
+- The pipeline produces curated tables, analysis-ready outputs, validation reports, and workshop-friendly artifacts for demos and review.
+
+## Architecture layers
+
+- Execution layer: GitHub Actions, test orchestration, pipeline code, and infrastructure provisioning coordinate the flow.
+- Data layer: data moves from raw to validated to curated datasets, then into reports and analysis-ready outputs.
+- Tooling layer: C# cleaner, Snowpark, QA validator, and Azure Bicep provide the implementation backbone.
+
 ## Repository structure
 
-```
+```text
 .
 ├── .github/           # CI/CD workflows, issue templates, PR template
 ├── .copilot/          # Prompt files and agent definitions for workshop
@@ -107,6 +184,13 @@ pip install pytest pytest-mock
 pytest src/snowpark/tests/ -v
 ```
 
+## Outputs and artifacts
+
+- Cleaned data files under `sample-data/cleaned/`
+- Curated Snowflake tables built through Snowpark transformations
+- Validation reports in JSON and Markdown formats from the QA validator
+- Analysis-ready outputs for dashboards, demos, and downstream reporting
+
 ## Workshop demo steps
 
 1. **Onboard** — Ask Copilot to explain the architecture and data flow
@@ -122,6 +206,14 @@ pytest src/snowpark/tests/ -v
 
 See [docs/demo-script.md](docs/demo-script.md) for the full step-by-step guide.
 
+## Key QA rules enforced
+
+- Null business keys: `application_id`, `customer_id`, `branch_code`
+- Invalid or future application dates
+- Negative or non-numeric loan amounts
+- Missing collateral for secured products such as `MORTGAGE`, `AUTO`, and `HELOC`
+- Source-to-target reconciliation with configurable tolerance
+
 ## Documentation
 
 - [Architecture Overview](docs/architecture.md)
@@ -134,7 +226,7 @@ See [docs/demo-script.md](docs/demo-script.md) for the full step-by-step guide.
 ## Technology stack
 
 | Component | Technology |
-|-----------|-----------|
+| --------- | ---------- |
 | Data cleaning | C# .NET 8, CsvHelper, Serilog |
 | Legacy source | Azure SQL Server |
 | Modern target | Snowflake on Azure |
