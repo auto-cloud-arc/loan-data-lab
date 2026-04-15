@@ -26,7 +26,7 @@ Azure SQL Server (legacy)
 
 ## Architecture and data flow
 
-![Loan Data Lab architecture](images/loan-data-architecture.png)
+![Loan Data Lab architecture](images/loan-data-architecture-infographic.png)
 
 ```mermaid
 flowchart LR
