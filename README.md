@@ -1,5 +1,7 @@
 # Contoso Bank Loan Data Modernization Lab
 
+Simple change to test GitHub Copilot Review agent
+
 [![CI](https://github.com/auto-cloud-arc/loan-data-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/auto-cloud-arc/loan-data-lab/actions/workflows/ci.yml)
 [![Data Quality](https://github.com/auto-cloud-arc/loan-data-lab/actions/workflows/validate-data-quality.yml/badge.svg)](https://github.com/auto-cloud-arc/loan-data-lab/actions/workflows/validate-data-quality.yml)
 
