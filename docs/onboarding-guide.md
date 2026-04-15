@@ -69,7 +69,7 @@ Expected output:
 
 ## 3. Running the QA Validator (Python)
 
-The QA Validator applies business rules to the cleaned data and produces a DQ report.
+The QA Validator applies business rules to the cleaned data, performs an optional row-count reconciliation check, and writes both machine-readable and human-readable DQ reports.
 
 ### Install dependencies
 
@@ -85,20 +85,57 @@ pip install -r src/qa-validator/tests/requirements-test.txt
 pytest src/qa-validator/tests/ -v
 ```
 
+Current test layout:
+
+- `src/qa-validator/tests/test_business_rules.py` - loan amount and secured-loan collateral checks
+- `src/qa-validator/tests/test_date_validation_rules.py` - future-date validation
+- `src/qa-validator/tests/test_null_check_rules.py` - required business key validation
+- `src/qa-validator/tests/test_reconciliation_rules.py` - row-count reconciliation logic
+- `src/qa-validator/tests/test_report_generator.py` - JSON and Markdown report output
+
 ### Run the full validation against cleaned sample data
 
 ```bash
 python src/qa-validator/runners/run_validations.py \
   --input sample-data/cleaned/loan_applications_cleaned.csv \
-  --report-dir reports/
+  --report-dir src/qa-validator/reports
 ```
 
-The runner will create `reports/qa_report_YYYYMMDD_HHMMSS.json` and `.md`.
+The runner loads the cleaned CSV, executes the registered rule set in `run_all_validations()`, computes reconciliation status, and then writes two timestamped files to the selected report directory:
+
+- `qa_report_YYYYMMDD_HHMMSS.json` - structured output for automation and artifact publishing
+- `qa_report_YYYYMMDD_HHMMSS.md` - Markdown summary for quick review
+
+The Markdown and JSON reports both include:
+
+- input file path
+- total records and total failures
+- pass rate
+- failure details
+- reconciliation summary when reconciliation arguments are provided or defaulted
+
+By default, the runner uses the input row count as both the source and target count, which produces a passing reconciliation summary for local sample runs. To test reconciliation failures explicitly, pass different counts:
+
+```bash
+python src/qa-validator/runners/run_validations.py \
+  --input sample-data/cleaned/loan_applications_cleaned.csv \
+  --report-dir src/qa-validator/reports \
+  --source-count 10 \
+  --target-count 8 \
+  --reconciliation-table loan_application_curated \
+  --reconciliation-tolerance 0.01
+```
+
+Exit-code behavior:
+
+- returns `1` when any validation failure has severity `critical`
+- returns `1` when reconciliation fails
+- returns `0` for warning-only failures or a fully clean run
 
 ### Adding a new validation rule
 
 1. Create a function in `src/qa-validator/rules/` that accepts a `pd.DataFrame` and returns `list[ValidationFailure]`
-2. Write a pytest test in `src/qa-validator/tests/`
+2. Write or update the matching pytest coverage in `src/qa-validator/tests/`
 3. Register the rule in `src/qa-validator/runners/run_validations.py` under `run_all_validations()`
 
 ---
