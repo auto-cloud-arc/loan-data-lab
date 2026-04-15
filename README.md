@@ -190,9 +190,15 @@ pytest src/snowpark/tests/ -v
 ### Web UI for manual testing
 
 ```bash
-pip install -r src/web-ui/requirements.txt
+# from the repository root
+python -m pip install -r src/web-ui/requirements.txt
+dotnet restore src/data-cleaner-csharp/ContosoLoanCleaner.sln
 streamlit run src/web-ui/app.py
 ```
+
+Open `http://localhost:8501`.
+
+Run the command from the repo root so the `src/web-ui/app.py` path resolves as shown. The web UI calls the .NET 8 cleaner and the Python QA validator locally, so both the .NET 8 SDK and Python 3.11+ environment must be available before you start Streamlit.
 
 The web UI lets you:
 
