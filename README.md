@@ -190,9 +190,20 @@ pytest src/snowpark/tests/ -v
 ### Web UI for manual testing
 
 ```bash
-pip install -r src/web-ui/requirements.txt
-streamlit run src/web-ui/app.py
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+python -m pip install -r src/web-ui/requirements.txt
+dotnet restore src/data-cleaner-csharp/ContosoLoanCleaner.sln
+dotnet build src/data-cleaner-csharp/ContosoLoanCleaner.sln
+python -m streamlit run src/web-ui/app.py
 ```
+
+Use `python -m streamlit` to avoid PATH issues on Windows shells where `streamlit` may not be available as a standalone command.
+
+The app starts a local Streamlit server and typically prints a URL such as `http://localhost:8501`.
+
+When the UI opens, start with the bundled sample data in `sample-data/raw/` to verify the end-to-end cleaner and QA flow before trying uploads.
 
 The web UI lets you:
 
